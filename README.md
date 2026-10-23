@@ -5,8 +5,7 @@ React + Vite one-page site for **Chinar Mineral Water Trading LLC** (Dubai).
 ## Edit content
 All business details (phone, WhatsApp, email, license no.) are in the `BIZ` object at the top of `src/App.jsx`.
 
-**Chinar tree photo:** put your own photo at `public/chinar.jpg` (landscape, ~1800px wide) and it will be used automatically.
-Until then the site loads a Chinar tree photo from Wikimedia Commons.
+**Chinar tree photo (optional):** save a landscape photo as `public/chinar.jpg` (~1800px wide) and it replaces the animated green Chinar canopy in the "Our Story" section automatically.
 
 ## Run locally
 ```bash

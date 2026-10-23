@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import logo from './assets/logo.webp'
 import mark from './assets/mark.png'
 import bottle from './assets/bottle.webp'
+import { LEAF_PATH } from './leafPath'
 
 /* ------------------------------------------------------------------
    Edit business details here — everything on the site reads from this.
@@ -17,37 +18,49 @@ const BIZ = {
   license: '1531893',
 }
 
-/* Chinar tree photo: drop your own photo at public/chinar.jpg and it is used first.
-   Otherwise it falls back to Wikimedia Commons photos of the Chinar (Platanus orientalis). */
-const CHINAR_PHOTOS = [
-  '/chinar.jpg',
-  'https://commons.wikimedia.org/wiki/Special:FilePath/Chinar_tree.jpg?width=1800',
-  'https://commons.wikimedia.org/wiki/Special:FilePath/Platanus_orientalis_tree.JPG?width=1800',
-]
+/* Real Chinar tree photo (optional): save a landscape photo as public/chinar.jpg
+   and it appears in the "Our Story" section automatically. Without it, an animated
+   green Chinar canopy is shown instead. */
+const CHINAR_PHOTO = '/chinar.jpg'
 
 const WA_LINK = `https://wa.me/${BIZ.whatsapp}?text=${encodeURIComponent(
   'Hello Chinar Water, I would like to order 5 gallon bottles.'
 )}`
 
-/* A simple chinar leaf shape, used for the falling-leaf animation */
-const LEAF =
-  'M50 2 L57 21 L71 13 L67 34 L91 29 L80 45 L98 55 L74 60 L80 78 L60 68 L54 84 L52 98 L48 98 L46 84 L40 68 L20 78 L26 60 L2 55 L20 45 L9 29 L33 34 L29 13 L43 21 Z'
+/* Chinar greens (spring/summer) with an occasional autumn leaf */
+const GREENS = ['#2f7d32', '#3f8f3a', '#5aa846', '#7cbf4e', '#256b34', '#4e9d3f']
+const AUTUMN = ['#d8572a', '#c23a22']
 
-function Leaf({ style, className = '' }) {
+/* The leaf shape is traced from the Chinar logo, defined once and reused everywhere */
+function LeafDefs() {
   return (
-    <svg viewBox="0 0 100 100" className={className} style={style} aria-hidden="true">
-      <path d={LEAF} fill="currentColor" />
+    <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
+      <defs>
+        <symbol id="chinar-leaf" viewBox="0 0 100 100">
+          <path d={LEAF_PATH} fill="currentColor" />
+        </symbol>
+      </defs>
     </svg>
   )
 }
 
-function FallingLeaves({ count = 9 }) {
+function Leaf({ style, className = '' }) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} style={style} aria-hidden="true">
+      <use href="#chinar-leaf" />
+    </svg>
+  )
+}
+
+function FallingLeaves({ count = 11, autumnEvery = 5 }) {
   const leaves = Array.from({ length: count }, (_, i) => ({
-    left: `${(i * 97) % 100}%`,
-    size: 14 + ((i * 7) % 18),
-    delay: `${(i * 1.7) % 12}s`,
-    dur: `${13 + ((i * 3) % 9)}s`,
-    opacity: 0.12 + ((i * 5) % 10) / 50,
+    left: `${(i * 37 + 7) % 100}%`,
+    size: 18 + ((i * 7) % 22),
+    delay: `-${(i * 2.3) % 18}s`,
+    dur: `${16 + ((i * 3) % 10)}s`,
+    flutter: `${3 + (i % 4) * 0.7}s`,
+    color: i % autumnEvery === autumnEvery - 1 ? AUTUMN[i % 2] : GREENS[i % GREENS.length],
+    opacity: 0.55 + ((i * 3) % 5) / 12,
   }))
   return (
     <div className="leaves" aria-hidden="true">
@@ -57,9 +70,70 @@ function FallingLeaves({ count = 9 }) {
           className="leaf-wrap"
           style={{ left: l.left, animationDelay: l.delay, animationDuration: l.dur }}
         >
-          <Leaf className="leaf" style={{ width: l.size, height: l.size, opacity: l.opacity }} />
+          <Leaf
+            className="leaf"
+            style={{ width: l.size, height: l.size, color: l.color, opacity: l.opacity, animationDuration: l.flutter }}
+          />
         </span>
       ))}
+    </div>
+  )
+}
+
+/* Leaves hanging from the top of the Story section, gently swaying like a Chinar branch */
+const rand = (seed) => {
+  const x = Math.sin(seed * 9301 + 49297) * 233280
+  return x - Math.floor(x)
+}
+const CANOPY = [
+  // back layer: darker, softer
+  ...Array.from({ length: 11 }, (_, i) => ({
+    x: i * 9.5 - 4 + rand(i) * 4,
+    y: -9 + rand(i + 50) * 15 + (i > 8 ? 16 : 0),
+    s: 150 + rand(i + 100) * 90,
+    r: 160 + rand(i + 150) * 50,
+    color: ['#1d5530', '#22603a', '#1a4d2b'][i % 3],
+    back: true,
+  })),
+  // front layer: bright chinar greens
+  ...Array.from({ length: 13 }, (_, i) => ({
+    x: i * 8 - 3 + rand(i + 200) * 5,
+    y: -11 + rand(i + 250) * 14 + (i === 0 || i === 12 ? 14 : 0),
+    s: 100 + rand(i + 300) * 130,
+    r: 150 + rand(i + 350) * 70,
+    color: GREENS[i % GREENS.length],
+    back: false,
+  })),
+  // a branch hanging down on the right
+  ...[
+    { x: 84, y: 14, s: 150, r: 205 },
+    { x: 95, y: 24, s: 190, r: 225 },
+    { x: 88, y: 34, s: 120, r: 195 },
+    { x: 99, y: 44, s: 140, r: 240 },
+  ].map((l, i) => ({ ...l, color: GREENS[(i + 2) % GREENS.length], back: false })),
+]
+
+function Canopy() {
+  return (
+    <div className="canopy" aria-hidden="true">
+      <div className="canopy__light" />
+      {CANOPY.map((l, i) => (
+        <span
+          key={i}
+          className={`canopy__leaf ${l.back ? 'canopy__leaf--back' : ''}`}
+          style={{
+            left: `${l.x}%`,
+            top: `${l.y}%`,
+            '--s': `${l.s}px`,
+            '--r': `${l.r}deg`,
+            animationDelay: `-${(i * 1.3) % 6}s`,
+            animationDuration: `${6 + (i % 4)}s`,
+          }}
+        >
+          <Leaf style={{ width: '100%', height: '100%', color: l.color }} />
+        </span>
+      ))}
+      <FallingLeaves count={7} autumnEvery={4} />
     </div>
   )
 }
@@ -144,6 +218,7 @@ function Hero() {
           </div>
         </div>
         <div className="hero__visual fade-in" style={{ '--d': '0.25s' }}>
+          <Leaf className="hero__leaf" />
           <div className="ripples" aria-hidden="true">
             <i /><i /><i />
           </div>
@@ -171,32 +246,21 @@ function Marquee() {
   )
 }
 
-function ChinarPhoto() {
-  const [idx, setIdx] = useState(0)
-  if (idx >= CHINAR_PHOTOS.length) return <div className="story__photo story__photo--fallback" />
-  const isWiki = CHINAR_PHOTOS[idx].includes('wikimedia')
-  return (
-    <>
-      <img
-        src={CHINAR_PHOTOS[idx]}
-        alt="A Chinar tree in autumn"
-        className="story__photo"
-        loading="lazy"
-        onError={() => setIdx((i) => i + 1)}
-      />
-      {isWiki && (
-        <a className="photo-credit" href="https://commons.wikimedia.org/wiki/Category:Platanus_orientalis" target="_blank" rel="noopener">
-          Photo: Wikimedia Commons
-        </a>
-      )}
-    </>
-  )
-}
-
 function Story() {
+  const [photo, setPhoto] = useState('loading') // loading | ok | none
   return (
-    <section className="story" id="story">
-      <ChinarPhoto />
+    <section className={`story ${photo === 'ok' ? 'story--photo' : ''}`} id="story">
+      <Canopy />
+      {photo !== 'none' && (
+        <img
+          src={CHINAR_PHOTO}
+          alt="A Chinar tree"
+          className="story__photo"
+          loading="lazy"
+          onLoad={(e) => setPhoto(e.currentTarget.naturalWidth > 1 ? 'ok' : 'none')}
+          onError={() => setPhoto('none')}
+        />
+      )}
       <div className="story__shade" />
       <div className="container story__content">
         <p className="eyebrow eyebrow--light reveal">Our Story</p>
@@ -399,6 +463,7 @@ export default function App() {
   useReveal()
   return (
     <>
+      <LeafDefs />
       <Nav />
       <main>
         <Hero />
