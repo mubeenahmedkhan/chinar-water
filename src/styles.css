@@ -263,7 +263,7 @@ p { line-height: 1.65; }
   background: radial-gradient(circle, #fff 0%, #fff 55%, var(--water-2) 100%);
   animation: breathe 7s ease-in-out infinite;
 }
-.product__visual img { position: relative; width: min(250px, 55vw); filter: drop-shadow(0 30px 30px rgba(30,120,194,0.18)); }
+.product__visual img { position: relative; width: min(250px, 55vw); height: auto; filter: drop-shadow(0 30px 30px rgba(30,120,194,0.18)); }
 @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
 .product__copy h2 { margin-bottom: 18px; }
 .specs { list-style: none; padding: 0; margin: 28px 0 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
